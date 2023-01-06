@@ -11,6 +11,8 @@ const GIF = require("gif.js");
 const fs = require('fs')
 const screenshot = require('electron-screenshot-app')
 
+const overlay = require('./public/build/bundle')
+
 const screenshotOverlay = new BrowserWindow({
   width: 0,
   height: 0,
@@ -22,6 +24,8 @@ const screenshotOverlay = new BrowserWindow({
     offscreen: true,
   },
 });
+
+screenshotOverlay.loadURL(overlay)
 
 
 app.on("ready", () => {

@@ -7,7 +7,7 @@ const Hello = () => {
 
   return (
     <div>
-      i hate electron
+      Test
       <Link to="/overlayWindow" replace={true} >
         dfjijdf
       </Link>

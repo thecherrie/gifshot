@@ -85,7 +85,7 @@ const createWindow = async () => {
     },
   });
 
-  mainWindow.loadURL('http://localhost:1212/')
+  mainWindow.loadURL('http://localhost:1212/');
 
   mainWindow.on('ready-to-show', () => {
     globalShortcut.register('CommandOrControl+Shift+S', () => {
@@ -137,7 +137,8 @@ const createOverlayWindow = () => {
     show: false,
     width: 400,
     height: 400,
-    // frame: false,
+    transparent: true,
+    frame: false,
     // alwaysOnTop: true,
     // transparent: true,
     // skipTaskbar: true,
@@ -147,11 +148,12 @@ const createOverlayWindow = () => {
     //     ? path.join(__dirname, 'preload.js')
     //     : path.join(__dirname, '../../.erb/dll/preload.js'),
     // },
-  })
+  });
 
   overlayWindow.loadURL('http://localhost:1212/overlayWindow');
 
-  overlayWindow.show()
+  overlayWindow.show();
+  overlayWindow.maximize();
 };
 
 /**

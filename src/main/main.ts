@@ -9,7 +9,7 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain, globalShortcut } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, globalShortcut, desktopCapturer } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
@@ -17,6 +17,7 @@ import { resolveHtmlPath } from './util';
 import react from 'react';
 import ReactDOM from 'react-dom';
 import OverlayWindow from '../../pages/OverlayWindow';
+import fs from 'fs';
 
 class AppUpdater {
   constructor() {
@@ -28,6 +29,7 @@ class AppUpdater {
 
 let mainWindow: BrowserWindow | null = null;
 let overlayWindow: BrowserWindow | null = null;
+let recordWindow: BrowserWindow | null = null;
 
 ipcMain.on('ipc-example', async (event, arg) => {
   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
@@ -156,6 +158,18 @@ const createOverlayWindow = () => {
   overlayWindow.maximize();
 };
 
+const createRecordWindow = () => {
+  recordWindow = new BrowserWindow({
+    show: false,
+    width: 400,
+    height: 400,
+  })
+
+  recordWindow.loadURL('http://localhost:1212/recordWindow')
+
+  recordWindow.show()
+}
+
 /**
  * Add event listeners...
  */
@@ -172,11 +186,28 @@ app.on('window-all-closed', () => {
   }
 });
 
+ipcMain.on('save-recording', (event, blob) => {
+  /* ... */
+})
+
+ipcMain.handle('get-sources', () => {
+  return desktopCapturer.getSources({ types: ['window', 'screen'] }).then(async sources => {
+    for (const source of sources) {
+      if (/*source.name === 'Gifshot' &&*/ mainWindow) {        
+        return source.id;
+      }
+    }
+  })
+ });
+
 app
   .whenReady()
   .then(() => {
     createWindow();
-    createOverlayWindow();
+    // createOverlayWindow();
+    // createRecordWindow()
+
+
     app.on('activate', () => {
       // On macOS it's common to re-create a window in the app when the
       // dock icon is clicked and there are no other windows open.

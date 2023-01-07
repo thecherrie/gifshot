@@ -20,6 +20,8 @@ const electronHandler = {
       ipcRenderer.once(channel, (_event, ...args) => func(...args));
     },
   },
+  getSources: () => ipcRenderer.invoke('get-sources'),
+  saveRecording: (blob) => ipcRenderer.send('save-recording', JSON.stringify(blob))
 };
 
 contextBridge.exposeInMainWorld('electron', electronHandler);

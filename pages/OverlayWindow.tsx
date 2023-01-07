@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 
 const OverlayWindow = () => {
   const [canvas, setCanvas] = useState(null);
@@ -7,10 +7,14 @@ const OverlayWindow = () => {
   const initCanvas = () => {
     console.log('init canvas');
     setCanvas(document.querySelector('#canvas'));
+  };
+
+  useEffect(() => {
+    console.log('set context');
     if (canvas) {
       setContext2(canvas?.getContext('2d'));
     }
-  };
+  }, [canvas, context2]);
 
   const initEventListeners = () => {
     canvas.addEventListener('mousedown', handleMouseDown);
@@ -19,7 +23,7 @@ const OverlayWindow = () => {
   };
 
   console.log('>>', canvas);
-  console.log("cotext2", context2);
+  console.log('cotext2', context2);
 
   // const handleDraw = () => {
   const resetCanvas = () => {
@@ -86,7 +90,7 @@ const OverlayWindow = () => {
     drawRect(o);
   }
 
-  function drawRect(o) {
+  const drawRect = (o) => {
     if (context2) {
       context2.strokeStyle = 'pink';
       context2.globalCompositeOperation = 'xor';
@@ -98,7 +102,7 @@ const OverlayWindow = () => {
       context2.stroke();
       context2.fill();
     }
-  }
+  };
   // Function to detect the mouse position
   function oMousePos(canvas2, evt) {
     let ClientRect = canvas2.getBoundingClientRect();

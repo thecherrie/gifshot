@@ -9,15 +9,26 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain, globalShortcut, desktopCapturer } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  shell,
+  ipcMain,
+  globalShortcut,
+  desktopCapturer,
+} from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
-import { resolveHtmlPath } from './util';
-import react from 'react';
-import ReactDOM from 'react-dom';
-import OverlayWindow from '../../pages/OverlayWindow';
 import fs from 'fs';
+import _ffmpeg from 'ffmpeg';
+import ffmpegPath from '@ffmpeg-installer/ffmpeg';
+import ffprobePath from '@ffprobe-installer/ffprobe';
+import ffmpeg from 'fluent-ffmpeg';
+import { exec } from 'child_process';
+
+ffmpeg.setFfmpegPath(ffmpegPath);
+ffmpeg.setFfprobePath(ffprobePath);
 
 class AppUpdater {
   constructor() {
@@ -163,12 +174,12 @@ const createRecordWindow = () => {
     show: false,
     width: 400,
     height: 400,
-  })
+  });
 
-  recordWindow.loadURL('http://localhost:1212/recordWindow')
+  recordWindow.loadURL('http://localhost:1212/recordWindow');
 
-  recordWindow.show()
-}
+  recordWindow.show();
+};
 
 /**
  * Add event listeners...
@@ -186,19 +197,43 @@ app.on('window-all-closed', () => {
   }
 });
 
-ipcMain.on('save-recording', (event, blob) => {
-  /* ... */
-})
-
-ipcMain.handle('get-sources', () => {
-  return desktopCapturer.getSources({ types: ['window', 'screen'] }).then(async sources => {
-    for (const source of sources) {
-      if (/*source.name === 'Gifshot' &&*/ mainWindow) {        
-        return source.id;
+ipcMain.on('save-recording', (event, videoBuffer) => {
+  console.info('saving recording');
+  fs.writeFile(
+    path.join(__dirname, '../../io/video.webm'),
+    videoBuffer,
+    (error) => {
+      if (error) {
+        console.log('Error writing file: ', error);
       }
     }
-  })
- });
+  );
+
+  console.log(ffmpegPath);
+  exec(
+    `${ffmpegPath.path} -i ${path.join(
+      __dirname,
+      '../../io/video.webm'
+    )} ${path.join(__dirname, '../../io/output.gif')}`,
+    (error, stdout, stderr) => {
+      console.log(error);
+      console.log(stdout);
+      console.log(stderr);
+    }
+  );
+});
+
+ipcMain.handle('get-sources', () => {
+  return desktopCapturer
+    .getSources({ types: ['window', 'screen'] })
+    .then(async (sources) => {
+      for (const source of sources) {
+        if (/* source.name === 'Gifshot' && */ mainWindow) {
+          return source.id;
+        }
+      }
+    });
+});
 
 app
   .whenReady()
@@ -206,7 +241,6 @@ app
     createWindow();
     // createOverlayWindow();
     // createRecordWindow()
-
 
     app.on('activate', () => {
       // On macOS it's common to re-create a window in the app when the

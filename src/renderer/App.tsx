@@ -1,69 +1,57 @@
-import { BrowserRouter as Router, Link, Routes, Route } from 'react-router-dom';
-import icon from '../../assets/icon.svg';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 import OverlayWindow from '../../pages/OverlayWindow';
 import RecordWindow from '../../pages/RecordWindow';
 import { useEffect, useState } from 'react';
-import { desktopCapturer, ipcRenderer } from 'electron';
 
 const Hello = () => {
-  const [recorder, setRecorder] = useState(null);
+  const [recorder, setRecorder] = useState<MediaRecorder | null>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+
+  const handleStop = (): void => {
+    recorder?.stop();
+  };
 
   useEffect(() => {
     if (recorder) {
-      recorder.ondataavailable = async (event) => {
+      recorder.ondataavailable = async (event: BlobEvent) => {
         const blob = new Blob([event.data], {
-          type: 'video/webm; codecs=vp9',
-        })
-        window.electron.saveRecording(blob);
-        console.log(blob)
-        // recordedChunks.push(event.data);
+          type: 'video/webm',
+        });
+
+        const buffer = await blob.arrayBuffer();
+
+        const bytes = new Int8Array(buffer);
+        window.electron.saveRecording(bytes);
       };
 
-      recorder.handlestop = handleStop
+      recorder.handlestop = handleStop;
 
       recorder.start();
     }
   }, [recorder]);
 
-  const handleRecord = (stream) => {
+  const handleRecord = () => {
     const options = {
-      mimeType: 'video/webm; codecs=vp9',
+      mimeType: 'video/webm',
     };
-    console.log(stream);
-    setRecorder(new MediaRecorder(stream, options));
-  };
-  console.log(recorder);
-  const handleStop = async (e) => {
-    recorder?.stop()
-
-    // const { filePath } = await dialog.showSaveDialog({
-
-    //   buttonLabel: 'Save video',
-    //   defaultPath: `vid-${Date.now()}.webm`
-    // });
-
-    // console.log(filePath);
-
-    console.log(123);
-    // writeFile('test.webm', buffer, () => console.log('video saved successfully!'));
+    if (stream) {
+      setRecorder(new MediaRecorder(stream, options));
+    }
   };
 
-  const handleStream = (stream: any) => {
-    handleRecord(stream);
+  const tempHandleStream = () => {
     const video = document.querySelector('video');
-    video!.srcObject = stream;
-    video!.onloadedmetadata = () => video!.play();
+    if (video) {
+      video.srcObject = stream;
+      video.onloadedmetadata = () => video.play();
+    }
   };
 
-  const handleError = (e: any) => {
-    console.log(e);
-  };
-
-  const getResource = async () => {
+  const handleGetStream = async () => {
     const sourceId = await window.electron.getSources();
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
+      const rawStream = await navigator.mediaDevices.getUserMedia({
         audio: false,
         video: {
           mandatory: {
@@ -73,22 +61,35 @@ const Hello = () => {
             maxWidth: 1280,
             minHeight: 720,
             maxHeight: 720,
+            innerHeight: 100,
+            innerWidth: 100,
           },
         },
       });
-      handleStream(stream);
-    } catch (e) {
-      handleError(e);
+      setStream(rawStream);
+      tempHandleStream();
+    } catch (error) {
+      console.error(error);
     }
   };
+
+  useEffect(() => {
+    if (!stream) {
+      handleGetStream();
+    }
+  }, [stream]);
 
   return (
     <div>
       <video width={300} height={300} controls>
-        <source src="" type="video/mp4" />
+        <source src="" type="image/mp4" />
       </video>
-      <button onClick={getResource}>strt</button>
-      <button onClick={handleStop}>stop</button>
+      <button type="button" onClick={handleRecord}>
+        strt
+      </button>
+      <button type="button" onClick={handleStop}>
+        stop
+      </button>
     </div>
   );
 };

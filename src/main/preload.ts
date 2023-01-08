@@ -21,7 +21,8 @@ const electronHandler = {
     },
   },
   getSources: () => ipcRenderer.invoke('get-sources'),
-  saveRecording: (blob) => ipcRenderer.send('save-recording', JSON.stringify(blob))
+  saveRecording: (videoBuffer: Int8Array) =>
+    ipcRenderer.send('save-recording', videoBuffer),
 };
 
 contextBridge.exposeInMainWorld('electron', electronHandler);
